@@ -1,18 +1,41 @@
 // YOUR CODE HERE:
+var app = {};
 
-$.ajax({
-  // This is the url you should use to communicate with the parse API server.
-  url: 'https://api.parse.com/1/classes/messages',
-  type: 'GET',
-  contentType: 'application/json',
-  success: function (data) {
-    displayMessages(data);
-  },
-  error: function (data) {
-    // See: https://developer.mozilla.org/en-US/docs/Web/API/console.error
-    console.error('chatterbox: Failed to get data', data);
-  }
-});
+app.init = function() {};
+
+app.send = function(message) {
+  $.ajax({
+    // This is the url you should use to communicate with the parse API server.
+    url: 'https://api.parse.com/1/classes/messages',
+    data: JSON.stringify(message),
+    type: 'POST',
+    contentType: 'application/json',
+    success: function (data) {
+      console.log("Message pushed successfully");  
+    },
+    error: function (data) {
+      // See: https://developer.mozilla.org/en-US/docs/Web/API/console.error
+      console.error('chatterbox: Failed to get data', data);
+    }
+  });
+};
+
+app.fetch = function(message) {
+  $.ajax({
+    // This is the url you should use to communicate with the parse API server.
+    // url: 'https://api.parse.com/1/classes/messages',
+    type: 'GET',
+    contentType: 'application/json',
+    success: function (data) {
+      displayMessages(data);
+    },
+    error: function (data) {
+      // See: https://developer.mozilla.org/en-US/docs/Web/API/console.error
+      console.error('chatterbox: Failed to get data', data);
+    }
+  });
+};
+
 
 var displayMessages = function(data) {
   var messages = data.results;
@@ -35,4 +58,4 @@ var displayMessages = function(data) {
     var $message = `<span>User: ${user} <br> ${text}</span>`;
     $('#chats').append($message);
   });
-}
+};
