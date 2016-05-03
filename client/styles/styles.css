@@ -50,11 +50,22 @@ form {
     padding: 20px;
     padding-left: 0;
     margin-bottom: 20px;
+    font-size: 12px;
 }
 
 form input[type=text] {
     margin-right: 10px;
-    width: 70%;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    width: 90%;
+    font-size: 12px;
+    padding: 5px;
+}
+
+form input[name=room] {
+    margin-right: 10px;
+    margin-top: 5px;
+    width: 50%;
     font-size: 12px;
     padding: 5px;
 }
