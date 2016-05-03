@@ -1,4 +1,9 @@
-// YOUR CODE HERE:
+var message = {
+  username: 'Alan',
+  text: 'Hi Austin!',
+  roomname: '4chan'
+};
+
 var app = {
   init: function() {
     $(document).ready(function () {
@@ -8,9 +13,12 @@ var app = {
         app.addFriend();
       });
       $('#send .submit').unbind();
-      $('#send .submit').on('submit', function() {
+      $('#send .submit').on('click', function() {
         console.log('submit event triggered');
         app.handleSubmit();
+      });
+      $('.refresh').on('click', function() {
+        app.fetch();
       });
     });
   },
@@ -32,14 +40,18 @@ var app = {
     });
   },
 
-  fetch: function(message) {
+  fetch: function() {
+    app.clearMessages();
     $.ajax({
       // This is the url you should use to communicate with the parse API server.
-      // url: 'https://api.parse.com/1/classes/messages',
+      url: 'https://api.parse.com/1/classes/messages',
       type: 'GET',
       contentType: 'application/json',
       success: function (data) {
-        displayMessages(data);
+        var messages = data.results;
+        _.each(messages, function(message) {
+          app.addMessage(message);
+        });
       },
       error: function (data) {
         // See: https://developer.mozilla.org/en-US/docs/Web/API/console.error
@@ -54,43 +66,12 @@ var app = {
 
   addMessage: function(message) {
     var text = message.text;
-    var user = message.username;
-    var room = message.roomname;
-    var $message = `<span>User: <span class='username'>${user}</span> <br> Text: ${text} <br> Room: ${room} <br></span>`;
-    $('#chats').append($message);
-  },
-  addRoom: function(room) {
-    $room = `<span> ${room} </span>`;
-    $('#roomSelect').append($room);
-  },
-  addFriend: function() {
-    // do soemthing\
-    console.log('addFriend called');
-  },
-
-  handleSubmit: function() {
-    console.log('handleSubmit called');
-  }
-
-};
-
-
-
-
-
-
-
-
-var displayMessages = function(data) {
-  var messages = data.results;
-  _.each(messages, function(message) {
-    var text = message.text;
     if(text) {
       text = text.replace(/</g, "&lt");
       text = text.replace(/>/g, "&gt");
       text = text.replace(/'/g, "&apos");
       text = text.replace(/"/g, "&quot");
-    }
+    };
     var user = message.username;
     if(user) {
       user = user.replace(/</g, "&lt");
@@ -98,7 +79,40 @@ var displayMessages = function(data) {
       user = user.replace(/'/g, "&apos");
       user = user.replace(/"/g, "&quot");
     }
-    var $message = `<span>User: ${user} <br> ${text}</span>`;
+    var room = message.roomname;
+    if(room) {
+      room = room.replace(/</g, "&lt");
+      room = room.replace(/>/g, "&gt");
+      room = room.replace(/'/g, "&apos");
+      room = room.replace(/"/g, "&quot");
+    }
+    var $message = `<p class='chat'><span><span class='username'>${user}</span><br>${text}<br></span></p>`;
     $('#chats').append($message);
-  });
+  },
+  addRoom: function(room) {
+    $room = `<span> ${room} </span>`;
+    $('#roomSelect').append($room);
+  },
+  addFriend: function() {
+    console.log('addFriend called');
+  },
+
+  handleSubmit: function() {
+    console.log('handleSubmit called');
+    var formdata = $('#send').serializeArray();
+    var message = {
+      username: formdata[0].value,
+      text: formdata[1].value
+    };
+    app.send(message);
+    app.fetch();
+  }
+
 };
+
+app.init();
+
+// app.send(message);
+
+
+
