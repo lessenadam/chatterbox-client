@@ -16,17 +16,20 @@
   <body>
     <div id="main">
       <h1>chatterbox</h1>
-      <div id='#roomSelect'>
-<!--         <form action='#' id='addRoom' method='post'>
-          <input type='text' name='room' id='room' value='add room'>
+      <div id='roomContainer'>
+        <label for='selectRoom'>Select room</label>
+        <select name="room" id='selectRoom' onchange='app.fetch();'
+        >
+          <option value="showAll">Show all</option>
+<!--           <option value="lobby">lobby</option>
+          <option value="room1">room1</option>
+          <option value="talent show">talent show</option> -->
+        </select>
+        <form action='#' id='addRoom' method='post'>
+          <label for="addRoom">Add a room:</label>
+          <input type='text' name='room' id='addRoom' value=''>
           <input type='submit' name='addRoom' class='addRoom'>
         </form>
-        Room: <select name="room">
-          <option value="lobby">lobby</option>
-          <option value="room1">room1</option>
-          <option value="room2">room2</option>
-          <option value="room3">room3</option>
-        </select> -->
       </div>
       <form action='#' id='send' method='post'>
         Username: <input type='user' name='username' id='username' value='anonymous'>

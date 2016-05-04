@@ -1,14 +1,26 @@
 var app = {
+  rooms: {'Show all': true},
+  friends: {},
+
   init: function() {
     $(document).ready(function () {
-      $('.username').on('click', function() {
-        app.addFriend();
+      $('h1').click(function() {
+        console.log('h1 clicked');
       });
-      $('#send .submit').on('click', function() {
+      $('#send .submit').on('click', function(event) {
+        event.preventDefault();
         app.handleSubmit();
+        $('#send').find('input')[1].value = '';
       });
       $('.refresh').on('click', function() {
         app.fetch();
+        app.updateRooms();
+      });
+      $('#addRoom .addRoom').on('click', function (event) {
+        event.preventDefault();
+        var room = $('#addRoom').serializeArray()[0].value;
+        app.addRoom(room);
+        $('#addRoom').find('input')[0].value = '';
       });
     });
     app.fetch();
@@ -31,15 +43,26 @@ var app = {
 
   fetch: function() {
     app.clearMessages();
+    var currentRoom = $('#selectRoom').find(':selected').text();
+    var query = currentRoom === 'Show all' ? {} : {'where': {'roomname':currentRoom}};
     $.ajax({
       url: 'https://api.parse.com/1/classes/messages',
       type: 'GET',
       contentType: 'application/json',
+      data: query,
       success: function (data) {
         var messages = data.results;
+        
         _.each(messages, function(message) {
+          if(!(message.roomname in app.rooms)) {
+            app.rooms[message.roomname] = true;
+          }
           app.addMessage(message);
         });
+      $('.username').click(function() {
+          var user = $(this).text();
+          app.addFriend(user);
+      });
       },
       error: function (data) {
         console.error('chatterbox: Failed to get data', data);
@@ -53,47 +76,56 @@ var app = {
 
   addMessage: function(message) {
     var text = message.text;
-    if (text) {
-      text = escapeText(text);
-    }
     var user = message.username;
-    if (user) {
-      user = escapeText(user);
+    var room = message.roomname;
+    if (user in app.friends) {
+      var message = `<p class='chat' room='${room}'><span class='username'></span><span>: </span><span class='message friend'></span></p>`;
+      var $starter = $(message);
+      $starter.find('.username').text(user);
+      $starter.find('.message').text(text);
     }
-    var $message = `<p class='chat'><span><span class='username'>${user}</span><br>${text}<br></span></p>`;
-    $('#chats').append($message);
+    else {
+      var message = `<p class='chat' room='${room}'><span class='username'></span><span>: </span><span class='message'></span></p>`;
+      var $starter = $(message);
+      $starter.find('.username').text(user);
+      $starter.find('.message').text(text);
+    }
+    $('#chats').append($starter);
   },
 
   addRoom: function(room) {
-    $room = `<span> ${room} </span>`;
-    $('#roomSelect').append($room);
+    app.rooms[room] = true;
+    room = `<option value='${room}'>${room}</option>`;
+    $('#selectRoom').append(room);
   },
 
-  addFriend: function() {
-    console.log('addFriend called');
+  updateRooms: function() {
+    $('#selectRoom').children().remove();
+    for (var key in app.rooms) {
+      app.addRoom(key);
+    }
+  },
+
+  addFriend: function(user) {
+    app.friends[user] = true;
+    console.log(user + ' added as a friend');
   },
 
   handleSubmit: function() {
-    console.log('handleSubmit called');
     var formdata = $('#send').serializeArray();
+    var currentRoom = $('#selectRoom').find(':selected').text();
     var message = {
       username: formdata[0].value,
-      text: formdata[1].value
+      text: formdata[1].value,
+      roomname: currentRoom
     };
     app.send(message);
   }
 };
 
-var escapeText = function(str) {
-  var escaped = '';
-  escaped = str.replace(/</g, '&lt');
-  escaped = escaped.replace(/>/g, '&gt');
-  escaped = escaped.replace(/'/g, '&apos');
-  escaped = escaped.replace(/"/g, '&quot');
-  return escaped;
-};
-
 app.init();
+
+setInterval(app.fetch, 50000);
 
 
 
