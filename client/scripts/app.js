@@ -1,120 +1,109 @@
-var app = {
+const app = {
+  server: 'https://api.parse.com/1/classes/messages',
   rooms: {'Show all': true},
   friends: {},
 
-  init: function() {
-    $(document).ready(function () {
-      $('h1').click(function() {
-        console.log('h1 clicked');
-      });
-      $('#send .submit').on('click', function(event) {
-        event.preventDefault();
-        app.handleSubmit();
-        $('#send').find('input')[1].value = '';
-      });
-      $('.refresh').on('click', function() {
-        app.fetch();
-        app.updateRooms();
-      });
-      $('#addRoom .addRoom').on('click', function (event) {
-        event.preventDefault();
-        var room = $('#addRoom').serializeArray()[0].value;
-        app.addRoom(room);
-        $('#addRoom').find('input')[0].value = '';
-      });
+  init: () => {
+    $(document).ready(() => {
+      app.addEventListeners();
+      app.fetch();
+    });
+  },
+
+  addEventListeners: () => {
+    $('#send .submit').on('click', event => {
+      event.preventDefault();
+      app.handleSubmit();
+      $('#send').find('input')[1].value = '';
+    });
+    $('.refresh').click(() => {
+      app.fetch();
+      app.updateRooms();
+    });
+    $('#addRoom .addRoom').on('click', event => {
+      event.preventDefault();
+      const room = $('#addRoom').serializeArray()[0].value;
+      app.addRoom(room);
+      $('#addRoom').find('input')[0].value = '';
+    });
+  },
+
+  send: message => {
+    $.ajax({
+      url: app.server,
+      data: JSON.stringify(message),
+      type: 'POST',
+      contentType: 'application/json',
+      success: data => console.log('Message pushed successfully'),  
+      error: data => console.error('chatterbox: Failed to get data', data)
     });
     app.fetch();
   },
 
-  send: function(message) {
-    $.ajax({
-      url: 'https://api.parse.com/1/classes/messages',
-      data: JSON.stringify(message),
-      type: 'POST',
-      contentType: 'application/json',
-      success: function (data) {
-        console.log('Message pushed successfully');  
-      },
-      error: function (data) {
-        console.error('chatterbox: Failed to get data', data);
+  appendMessages: messages => {
+    _.each(messages, message => {
+      if (!(message.roomname in app.rooms)) {
+        app.rooms[message.roomname] = true;
       }
+      app.addMessage(message);
+    });
+    $('.username').click(function() {
+      const user = $(this).text();
+      app.addFriend(user);
     });
   },
 
-  fetch: function() {
+  fetch: () => {
     app.clearMessages();
-    var currentRoom = $('#selectRoom').find(':selected').text();
-    var query = currentRoom === 'Show all' ? {} : {'where': {'roomname':currentRoom}};
+    const currentRoom = $('#selectRoom').find(':selected').text();
+    const query = currentRoom === 'Show all' ? {} : {'where': {'roomname': currentRoom}};
     $.ajax({
-      url: 'https://api.parse.com/1/classes/messages',
+      url: app.server,
       type: 'GET',
       contentType: 'application/json',
       data: query,
-      success: function (data) {
-        var messages = data.results;
-        
-        _.each(messages, function(message) {
-          if(!(message.roomname in app.rooms)) {
-            app.rooms[message.roomname] = true;
-          }
-          app.addMessage(message);
-        });
-      $('.username').click(function() {
-          var user = $(this).text();
-          app.addFriend(user);
-      });
-      },
-      error: function (data) {
-        console.error('chatterbox: Failed to get data', data);
-      }
+      success: data => app.appendMessages(data.results),
+      error: data => console.error('chatterbox: Failed to get data', data)
     });
   },
 
-  clearMessages: function() {
-    $('#chats').children().remove();
-  },
+  clearMessages: () => $('#chats').children().remove(),
 
-  addMessage: function(message) {
-    var text = message.text;
-    var user = message.username;
-    var room = message.roomname;
-    if (user in app.friends) {
-      var message = `<p class='chat' room='${room}'><span class='username'></span><span>: </span><span class='message friend'></span></p>`;
-      var $starter = $(message);
-      $starter.find('.username').text(user);
-      $starter.find('.message').text(text);
+  addMessage: message => {
+    let newPost;
+    if (message.username in app.friends) {
+      newPost = `<p class='chat' room='${message.roomname}'><span class='username'></span><span>: </span><span class='message friend'></span></p>`;
+    } else {
+      newPost = `<p class='chat' room='${message.roomname}'><span class='username'></span><span>: </span><span class='message'></span></p>`;
     }
-    else {
-      var message = `<p class='chat' room='${room}'><span class='username'></span><span>: </span><span class='message'></span></p>`;
-      var $starter = $(message);
-      $starter.find('.username').text(user);
-      $starter.find('.message').text(text);
-    }
+    const $starter = $(newPost);
+    $starter.find('.username').text(message.username);
+    $starter.find('.message').text(message.text);
     $('#chats').append($starter);
   },
 
-  addRoom: function(room) {
+  addRoom: room => {
     app.rooms[room] = true;
     room = `<option value='${room}'>${room}</option>`;
     $('#selectRoom').append(room);
   },
 
-  updateRooms: function() {
+  updateRooms: () => {
     $('#selectRoom').children().remove();
-    for (var key in app.rooms) {
+    for (const key in app.rooms) {
       app.addRoom(key);
     }
   },
 
-  addFriend: function(user) {
+  addFriend: user => {
     app.friends[user] = true;
-    console.log(user + ' added as a friend');
+    console.log(`${user} added as a friend`);
   },
 
-  handleSubmit: function() {
-    var formdata = $('#send').serializeArray();
-    var currentRoom = $('#selectRoom').find(':selected').text();
-    var message = {
+  handleSubmit: () => {
+    const formdata = $('#send').serializeArray();
+    const currentRoom = $('#selectRoom').find(':selected').text();
+    const message = {
       username: formdata[0].value,
       text: formdata[1].value,
       roomname: currentRoom
